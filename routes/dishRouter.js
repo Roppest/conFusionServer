@@ -1,43 +1,61 @@
 const express = require ('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const Dishes = require('../models/dishes.js');
 
 const dishRouter = express.Router();
 
 dishRouter.use(bodyParser.json());
 
 dishRouter.route('/')
-  .all((req,res,next) =>//for all requests
+  .get((req,res,next)=> //get dishes
   {
-    res.statusCode=200;//default
-    res.setHeader('Content-Type', 'text/plain');
-    next();
+    Dishes.find({})
+      .then((dishes)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(dishes);
+      },(err)=>next(err)).catch((err)=>next(err));
   })
-  .get((req,res,next)=> //get dish
-  {
-    res.end("This will send all dishes");
-  })
-
   .post((req,res,next) => //add dish
   {
-    res.end('Will add the dish: ' + req.body.name +
-     ' with details: ' + req.body.description);
+    Dishes.create(req.body)
+      .then((dish)=>
+      {
+        console.log('Dish created',dish);
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(dish);
+      },(err)=>next(err)).catch((err)=>next(err));
   })
-
   .put( (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-
   .delete( (req,res,next) => //danger!!
   {
-    res.end('Deleting all dishes');
+    Dishes.remove({})
+    .then((resp)=>
+    {
+      res.statusCode = 200;
+      res.setHeader('Content-Type','application/json');
+      res.json(resp);
+    },(err)=>next(err)).catch((err)=>next(err));
   });
 //---------------with dishId----------------
 dishRouter.route('/:dishId')
-  .get((req,res,next)=> //get dish
+  .get((req,res,next)=> //get a dish
   {
-    res.end("This will send details of " + req.params.dishId);
+    Dishes.findById(req.params.dishId)
+      .then((dishes)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(dishes);
+      },(err)=>next(err)).catch((err)=>next(err));
   })
 
   .post( (req,res,next) => //unsupported
@@ -48,12 +66,27 @@ dishRouter.route('/:dishId')
 
   .put( (req,res,next) => //update a dish
   {
-    res.end('Updating dish: '+req.body.name);
+    Dishes.findByIdAndUpdate(
+      req.params.dishId,
+      {$set: req.body},
+      {new:true}
+    )
+      .then((dish)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(dish);
+      },(err)=>next(err)).catch((err)=>next(err));
   })
-
   .delete( (req,res,next) => //danger!!
   {
-    res.end('Deleting dish: ' + req.params.dishId);
+    Dishes.findByIdAndRemove(req.params.dishId)
+      .then((resp)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(resp);
+      },(err)=>next(err)).catch((err)=>next(err));
   });
 //-----------------------------------------------
 
