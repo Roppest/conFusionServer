@@ -49,9 +49,9 @@ const dishSchema = new Schema
     required: true,
     min:0
   },
-  feature:{
+  featured:{
     type: Boolean,
-    required: false
+    required: true
   },
   comments:[commentSchema]
 },{timestamps: true});

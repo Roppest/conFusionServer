@@ -2,56 +2,88 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const leaderRouter = express.Router();
 
+const Leaders = require('../models/leaders');
+
 leaderRouter.use(bodyParser.json());
+
 leaderRouter.route('/')
-  .all((req,res,next)=>
-  {
-    res.statusCode=200;
-    res.setHeader('Content-Type','text/plain');
-    next();
-  })
   .get((req,res,next)=>
   {
-    res.end('This will send all leaders.');
+    Leaders.find({})
+      .then((leaders)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leaders);
+      },(err)=>next(err)).catch((err)=> next(err));
   })
   .post((req,res,next)=>
+  {
+    Leaders.create(req.body)
+      .then((leader)=>
+      {
+        console.log('Leader created:',leader);
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leader);
+      },(err)=>next(err)).catch((err)=> next(err));
+  })
+  .put((req,res,next)=>
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .put((req,res,next)=>
-  {
-    res.end('This will add the leader: ' + req.body.name +
-      ' with details: ' + req.body.description);
-  })
   .delete((req,res,next)=>
   {
-    res.end('Deleting all leaders.')//Danger!!
-  });
+    Leaders.remove({})
+      .then((deleted)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(deleted);
+      },(err)=>next(err)).catch((err)=> next(err));
+  }
+);
 
 leaderRouter.route('/:leaderId')
-  .all((req,res,next)=>
-  {
-    res.statusCode=200;
-    res.setHeader('Content-Type','text/plain');
-    next();
-  })
   .get((req,res,next)=>
   {
-    res.end('This will send details of: ' + req.params.leaderId);
+    Leaders.findById(req.params.leaderId)
+      .then((leaders)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leaders);
+      },(err)=>next(err)).catch((err)=> next(err));
   })
-  .post((req,res,next)=>
+  .post((req,res,next)=>//can't insert an item that doesn't exists
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .put((req,res,next)=>
+  .put((req,res,next)=>//update a leader
   {
-    res.end('Updating leader: '+req.params.leaderId);
+    Leaders.findByIdAndUpdate(req.params.leaderId,
+      {$set:req.body},
+      {new:true}
+    )
+      .then((leader)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leader);
+      },(err)=>next(err)).catch((err)=> next(err));
   })
   .delete((req,res,next)=>
   {
-    res.end('Deleting leader: '+req.params.leaderId);
-  });
+    Leaders.findByIdAndRemove(req.params.leaderId)
+      .then((leader)=>
+      {
+        res.statusCode = 200;
+        res.setHeader('Content-Type','application/json');
+        res.json(leader);
+      },(err)=>next(err)).catch((err)=> next(err));
+  }
+);
 
 module.exports = leaderRouter;

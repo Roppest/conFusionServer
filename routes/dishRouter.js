@@ -87,7 +87,8 @@ dishRouter.route('/:dishId')
         res.setHeader('Content-Type','application/json');
         res.json(resp);
       },(err)=>next(err)).catch((err)=>next(err));
-  });
+  }
+);
 //-----------------------------------------------
 
 //-------------Handling comments---------------
@@ -138,7 +139,8 @@ dishRouter.route('/:dishId/comments')
   .put( (req,res,next) => //unsupported
   {
     res.statusCode=403;
-    res.end('Operation not supported on /dishes/'+req.params.dishId+'/comments');
+    res.end('Operation not supported on /dishes/'+
+      req.params.dishId+'/comments');
   })
   .delete((req,res,next) => //delete all comments from dish
   {
@@ -166,7 +168,8 @@ dishRouter.route('/:dishId/comments')
         return next(err);
       }
     },(err)=>next(err)).catch((err)=>next(err));
-  });
+  }
+);
 //---------------with commentId----------------
 dishRouter.route('/:dishId/comments/:commentId')
   .get((req,res,next)=> //get a comment
@@ -174,7 +177,8 @@ dishRouter.route('/:dishId/comments/:commentId')
     Dishes.findById(req.params.dishId)
       .then((dish)=>
       {
-        if(dish != null && dish.comments.id(req.params.commentId) != null)
+        if(dish != null &&
+          dish.comments.id(req.params.commentId) != null)
         {
           res.statusCode = 200;
           res.setHeader('Content-Type','application/json');
@@ -207,15 +211,18 @@ dishRouter.route('/:dishId/comments/:commentId')
     Dishes.findById(req.params.dishId)
       .then((dish)=>
       {
-        if(dish != null && dish.comments.id(req.params.commentId) != null)
+        if(dish != null &&
+          dish.comments.id(req.params.commentId) != null)
         {
           if(req.body.rating)
           {
-            dish.comments.id(req.params.commentId).rating = req.body.rating;
+            dish.comments.id(req.params.commentId).rating =
+              req.body.rating;
           }
           if(req.body.comment)
           {
-            dish.comments.id(req.params.commentId).comment = req.body.comment;
+            dish.comments.id(req.params.commentId).comment =
+              req.body.comment;
           }
           dish.save()
             .then((dish)=>
@@ -245,7 +252,8 @@ dishRouter.route('/:dishId/comments/:commentId')
     Dishes.findById(req.params.dishId)
     .then((dish)=>
     {
-      if(dish != null && dish.comments.id(req.params.commentId) != null)
+      if(dish != null &&
+        dish.comments.id(req.params.commentId) != null)
       {
         dish.comments.id(req.params.commentId).remove();
 
@@ -270,7 +278,8 @@ dishRouter.route('/:dishId/comments/:commentId')
         return next(err);
       }
     },(err)=>next(err)).catch((err)=>next(err));
-  });
+  }
+);
 //-----------------------------------------------
 
 
