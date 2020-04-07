@@ -33,37 +33,54 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-09876-54321'));//use dotenv
 
 //--------------------Authentication part---------------------------
 function auth(req,res,next)
 {
   console.log('Request Headers:');
-  console.log(req.headers);
-  var authHeader = req.headers.authorization;
-  if(! authHeader)
-  {//no user | pass
-    var err = new Error('You are not authenticated');
-    res.setHeader('WWW-Authenticate','Basic');
-    err.status = 401;
-    return next(err);
-  }
-  var auth = Buffer(authHeader.split(' ')[1], 'base64')
-    .toString().split(':');//for separating user and pass
-  console.log('auth:');
-  console.log(auth);
+  console.log(req.signedCookies);
 
-  if(auth[0] ==='admin' && auth[1] ==='password')
+  if(!req.signedCookies.user)
   {
-    next();
+    var authHeader = req.headers.authorization;
+    if(! authHeader)
+    {//no user | pass
+      var err = new Error('You are not authenticated');
+      res.setHeader('WWW-Authenticate','Basic');
+      err.status = 401;
+      return next(err);
+    }
+    var auth = Buffer.from(authHeader.split(' ')[1], 'base64')//this keeps authentication data DANGER!!
+      .toString().split(':');//for separating user and pass
+    console.log('auth:');
+    console.log(auth);
+
+    if(auth[0] ==='admin' && auth[1] ==='password')
+    {
+      res.cookie('user','admin',{signed:true});
+      next();
+    }
+    else
+    {
+      var err = new Error('You are not authenticated');
+      res.setHeader('WWW-Authenticate','Basic');
+      err.status = 401;
+      return next(err);
+    }
   }
   else
   {
-    var err = new Error('You are not authenticated');
-    res.setHeader('WWW-Authenticate','Basic');
-    err.status = 401;
-    return next(err);
+    if(req.signedCookies.user === 'admin')
+      next();
+    else
+    {
+      var err = new Error('You are not authenticated');
+      err.status = 401;
+      return next(err);
+    }
   }
+
 }
 //------------------------------------------------
 app.use(auth);
