@@ -44,6 +44,9 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 //--------------------Authentication part---------------------------
 function auth(req,res,next)
 {
@@ -53,41 +56,20 @@ function auth(req,res,next)
   //if(!req.signedCookies.user)
   if(!req.session.user)
   {
-    var authHeader = req.headers.authorization;
-    if(! authHeader)
-    {//no user | pass
-      var err = new Error('You are not authenticated');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status = 401;
-      return next(err);
-    }
-    var auth = Buffer.from(authHeader.split(' ')[1], 'base64')//this keeps authentication data DANGER!!
-      .toString().split(':');//for separating user and pass
-    
-
-    if(auth[0] ==='admin' && auth[1] ==='password')
-    {
-      //res.cookie('user','admin',{signed:true});
-      req.session.user = 'admin';
-      next();
-    }
-    else
-    {
-      var err = new Error('You are not authenticated');
-      res.setHeader('WWW-Authenticate','Basic');
-      err.status = 401;
-      return next(err);
-    }
+    var err = new Error('You are not authenticated');
+    res.setHeader('WWW-Authenticate','Basic');
+    err.status = 401;
+    return next(err);
   }
   else
   {
     //if(req.signedCookies.user === 'admin')
-    if(req.session.user === 'admin')
+    if(req.session.user === 'authenticated')
       next();
     else
     {
-      var err = new Error('You are not authenticated');
-      err.status = 401;
+      var err = new Error('You are not session authenticated');
+      err.status = 403;
       return next(err);
     }
   }
@@ -98,8 +80,7 @@ app.use(auth);
 app.use(express.static(path.join(__dirname, 'public')));
 
 //mount
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 app.use('/dishes',dishRouter);
 app.use('/promotions',promoRouter);
 app.use('/leaders',leaderRouter);
