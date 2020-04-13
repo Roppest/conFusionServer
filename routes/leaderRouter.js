@@ -1,7 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const leaderRouter = express.Router();
-
+const authenticate = require('../authenticate');
 
 const Leaders = require('../models/leaders');
 
@@ -18,7 +18,7 @@ leaderRouter.route('/')
         res.json(leaders);
       },(err)=>next(err)).catch((err)=> next(err));
   })
-  .post((req,res,next)=>
+  .post(authenticate.verifyUser,(req,res,next)=>
   {
     Leaders.create(req.body)
       .then((leader)=>
@@ -29,12 +29,12 @@ leaderRouter.route('/')
         res.json(leader);
       },(err)=>next(err)).catch((err)=> next(err));
   })
-  .put((req,res,next)=>
+  .put(authenticate.verifyUser,(req,res,next)=>
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .delete((req,res,next)=>
+  .delete(authenticate.verifyUser,(req,res,next)=>
   {
     Leaders.remove({})
       .then((deleted)=>
@@ -57,12 +57,12 @@ leaderRouter.route('/:leaderId')
         res.json(leaders);
       },(err)=>next(err)).catch((err)=> next(err));
   })
-  .post((req,res,next)=>//can't insert an item that doesn't exists
+  .post(authenticate.verifyUser,(req,res,next)=>//can't insert an item that doesn't exists
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .put((req,res,next)=>//update a leader
+  .put(authenticate.verifyUser,(req,res,next)=>//update a leader
   {
     Leaders.findByIdAndUpdate(req.params.leaderId,
       {$set:req.body},
@@ -75,7 +75,7 @@ leaderRouter.route('/:leaderId')
         res.json(leader);
       },(err)=>next(err)).catch((err)=> next(err));
   })
-  .delete((req,res,next)=>
+  .delete(authenticate.verifyUser,(req,res,next)=>
   {
     Leaders.findByIdAndRemove(req.params.leaderId)
       .then((leader)=>

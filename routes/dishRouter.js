@@ -1,6 +1,7 @@
 const express = require ('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const authenticate = require('../authenticate');
 
 const Dishes = require('../models/dishes.js');
 
@@ -19,7 +20,7 @@ dishRouter.route('/')
         res.json(dishes);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post((req,res,next) => //add dish
+  .post(authenticate.verifyUser,(req,res,next) => //add dish
   {
     Dishes.create(req.body)
       .then((dish)=>
@@ -30,7 +31,7 @@ dishRouter.route('/')
         res.json(dish);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .put( (req,res,next) => //unsupported
+  .put(authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('Operation not supported');
@@ -47,7 +48,7 @@ dishRouter.route('/')
   });
 //---------------with dishId----------------
 dishRouter.route('/:dishId')
-  .get((req,res,next)=> //get a dish
+  .get(authenticate.verifyUser,(req,res,next)=> //get a dish
   {
     Dishes.findById(req.params.dishId)
       .then((dishes)=>
@@ -58,13 +59,13 @@ dishRouter.route('/:dishId')
       },(err)=>next(err)).catch((err)=>next(err));
   })
 
-  .post( (req,res,next) => //unsupported
+  .post(authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('POST not supported');
   })
 
-  .put( (req,res,next) => //update a dish
+  .put(authenticate.verifyUser, (req,res,next) => //update a dish
   {
     Dishes.findByIdAndUpdate(
       req.params.dishId,
@@ -78,7 +79,7 @@ dishRouter.route('/:dishId')
         res.json(dish);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .delete( (req,res,next) => //danger!!
+  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
   {
     Dishes.findByIdAndRemove(req.params.dishId)
       .then((resp)=>
@@ -112,7 +113,7 @@ dishRouter.route('/:dishId/comments')
         }
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post((req,res,next) => //add comment
+  .post(authenticate.verifyUser,(req,res,next) => //add comment
   {
     Dishes.findById(req.params.dishId)
       .then((dish)=>
@@ -136,13 +137,13 @@ dishRouter.route('/:dishId/comments')
         }
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .put( (req,res,next) => //unsupported
+  .put( authenticate.verifyUser,(req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('Operation not supported on /dishes/'+
       req.params.dishId+'/comments');
   })
-  .delete((req,res,next) => //delete all comments from dish
+  .delete(authenticate.verifyUser,(req,res,next) => //delete all comments from dish
   {
     Dishes.findById(req.params.dishId)
     .then((dish)=>
@@ -199,14 +200,14 @@ dishRouter.route('/:dishId/comments/:commentId')
       },(err)=>next(err)).catch((err)=>next(err));
   })
 
-  .post( (req,res,next) => //unsupported
+  .post(authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('POST not supported on /dishes/' + req.params.dishId +
     '/comments/' + req.params.commentId);
   })
 
-  .put( (req,res,next) => //update a dish
+  .put(authenticate.verifyUser, (req,res,next) => //update a dish
   {
     Dishes.findById(req.params.dishId)
       .then((dish)=>
@@ -247,7 +248,7 @@ dishRouter.route('/:dishId/comments/:commentId')
         }
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .delete( (req,res,next) => //danger!!
+  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
   {
     Dishes.findById(req.params.dishId)
     .then((dish)=>

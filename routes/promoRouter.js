@@ -1,6 +1,7 @@
 const express = require ('express');
 const bodyParser = require('body-parser');
 const promotionRouter = express.Router();
+const authenticate = require('../authenticate');
 
 const Promotions =  require('../models/promotions');
 
@@ -17,7 +18,7 @@ promotionRouter.route('/')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post((req,res,next) => //add promotion
+  .post(authenticate.verifyUser,(req,res,next) => //add promotion
   {
     Promotions.create(req.body)
       .then((promos)=>
@@ -27,12 +28,12 @@ promotionRouter.route('/')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .put( (req,res,next) => //unsupported
+  .put(authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .delete( (req,res,next) => //danger!!
+  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
   {
     Promotions.remove({})
       .then((deleted)=>
@@ -56,12 +57,12 @@ promotionRouter.route('/:promoId')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post( (req,res,next) => //unsupported
+  .post(authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('POST not supported');
   })
-  .put( (req,res,next) => //update a promotion
+  .put( authenticate.verifyUser,(req,res,next) => //update a promotion
   {
     Promotions.findByIdAndUpdate(req.params.promoId,
         {$set:req.body},
@@ -74,7 +75,7 @@ promotionRouter.route('/:promoId')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .delete( (req,res,next) => //danger!!
+  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
   {
     Promotions.findByIdAndRemove(req.params.promoId)
       .then((promo)=>
