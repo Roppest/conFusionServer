@@ -24,7 +24,7 @@ exports.jwtPassport = passport.use(new JwtStrategy(
   opts,
   (jwt_payload, done) =>
     {
-      console.log('JWT Payload: ', jwt_payload);
+      //console.log('JWT Payload: ', jwt_payload);
       User.find({_id:jwt_payload._id}, (err,user)=>
         {
           if(err)
@@ -38,3 +38,14 @@ exports.jwtPassport = passport.use(new JwtStrategy(
 ));
 
 exports.verifyUser = passport.authenticate('jwt',{session:false});
+exports.verifyAdmin = (req,res,next)=>
+{
+  if(req.user[0].admin)
+    next();
+  else
+  {
+    err = new Error('You are not authorized to perform this operation!');
+    err.status = 403;
+    return next(err);
+  }
+};

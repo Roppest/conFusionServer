@@ -21,7 +21,9 @@ dishRouter.route('/')
         res.json(dishes);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post(authenticate.verifyUser,(req,res,next) => //add dish
+  .post(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //add dish
   {
     Dishes.create(req.body)
       .then((dish)=>
@@ -32,12 +34,16 @@ dishRouter.route('/')
         res.json(dish);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .put(authenticate.verifyUser, (req,res,next) => //unsupported
+  .put(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
+  .delete(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //danger!!
   {
     Dishes.remove({})
     .then((resp)=>
@@ -61,13 +67,17 @@ dishRouter.route('/:dishId')
       },(err)=>next(err)).catch((err)=>next(err));
   })
 
-  .post(authenticate.verifyUser, (req,res,next) => //unsupported
+  .post(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('POST not supported');
   })
 
-  .put(authenticate.verifyUser, (req,res,next) => //update a dish
+  .put(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //update a dish
   {
     Dishes.findByIdAndUpdate(
       req.params.dishId,
@@ -81,7 +91,9 @@ dishRouter.route('/:dishId')
         res.json(dish);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
+  .delete(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //danger!!
   {
     Dishes.findByIdAndRemove(req.params.dishId)
       .then((resp)=>
@@ -124,10 +136,10 @@ dishRouter.route('/:dishId/comments')
         if(dish != null)
         {
           req.body.author = req.user[0]._id;
-          console.log('req.user: ')
+          /*console.log('req.user: ')
           console.log(req.user);
           console.log('req.body: ');
-          console.log(req.body);
+          console.log(req.body);*/
           dish.comments.push(req.body);
           dish.save()
             .then((dish)=>
@@ -156,7 +168,9 @@ dishRouter.route('/:dishId/comments')
     res.end('Operation not supported on /dishes/'+
       req.params.dishId+'/comments');
   })
-  .delete(authenticate.verifyUser,(req,res,next) => //delete all comments from dish
+  .delete(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //delete all comments from dish
   {
     Dishes.findById(req.params.dishId)
     .then((dish)=>
@@ -214,14 +228,17 @@ dishRouter.route('/:dishId/comments/:commentId')
       },(err)=>next(err)).catch((err)=>next(err));
   })
 
-  .post(authenticate.verifyUser, (req,res,next) => //unsupported
+  .post(authenticate.verifyUser,
+  authenticate.verifyAdmin,
+  (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('POST not supported on /dishes/' + req.params.dishId +
     '/comments/' + req.params.commentId);
   })
 
-  .put( authenticate.verifyUser, (req,res,next) => //update a dish
+  .put( authenticate.verifyUser,
+  (req,res,next) => //update a specific comment
   {
     Dishes.findById(req.params.dishId)
       .then((dish)=>
@@ -246,13 +263,23 @@ dishRouter.route('/:dishId/comments/:commentId')
                 .populate('comments.author')
                 .then((dish)=>
                 {
-                  res.statusCode = 200;
-                  res.setHeader('Content-Type','application/json');
-                  res.json(dish.comments.id(req.params.commentId));
+                  if(req.user[0]._id.equals(
+                    dish.comments.id(req.params.commentId).author._id))
+                  {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type','application/json');
+                    res.json(dish.comments.id(req.params.commentId));
+                  }
+                  else
+                  {
+                    err = new Error('You are not authorized to perform this operation!');
+                    err.status = 403;
+                    return next(err);
+                  }
                 });
             }, (err)=>next(err));
         }
-        else if (dish != null)
+        else if (dish == null)
         {
           err = new Error('Dish '+ req.params.dishId + 'not found');
           err.status = 404;
@@ -266,7 +293,8 @@ dishRouter.route('/:dishId/comments/:commentId')
         }
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .delete( authenticate.verifyUser, (req,res,next) => //danger!!
+  .delete( authenticate.verifyUser,
+  (req,res,next) => //Comment owner only
   {
     Dishes.findById(req.params.dishId)
     .then((dish)=>
@@ -274,20 +302,29 @@ dishRouter.route('/:dishId/comments/:commentId')
       if(dish != null &&
         dish.comments.id(req.params.commentId) != null)
       {
-        dish.comments.id(req.params.commentId).remove();
+        if(req.user[0]._id.equals(dish.comments.id(req.params.commentId).author._id))
+        {//only the comment poster will be able to dlete it
+          dish.comments.id(req.params.commentId).remove();
 
-        dish.save()
-          .then((dish)=>
-          {
-            Dishes.findById(dish._id)
-            .populate('comments.author')
+          dish.save()
             .then((dish)=>
             {
-              res.statusCode = 200;
-              res.setHeader('Content-Type','application/json');
-              res.json(dish);
-            })
-          },(err)=> next(err));
+              Dishes.findById(dish._id)
+              .populate('comments.author')
+              .then((dish)=>
+              {
+                res.statusCode = 200;
+                res.setHeader('Content-Type','application/json');
+                res.json(dish);
+              })
+            },(err)=> next(err));
+        }
+        else
+        {
+          err = new Error('You are not authorized to perform this operation!');
+          err.status = 403;
+          return next(err);
+        }
       }
       else if (dish != null)
       {
