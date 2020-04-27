@@ -2,13 +2,15 @@ const express = require ('express');
 const bodyParser = require('body-parser');
 const promotionRouter = express.Router();
 const authenticate = require('../authenticate');
+const cors = require('./cors');
 
 const Promotions =  require('../models/promotions');
 
 promotionRouter.use(bodyParser.json());
 
 promotionRouter.route('/')
-  .get((req,res,next)=> //get promotions
+  .options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
+  .get(cors.cors,(req,res,next)=> //get promotions
   {
     Promotions.find({})
       .then((promos)=>
@@ -18,7 +20,10 @@ promotionRouter.route('/')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post(authenticate.verifyUser,(req,res,next) => //add promotion
+  .post(cors.corsWithOptions,
+    authenticate.verifyUser,
+    authenticate.verifyAdmin,
+    (req,res,next) => //add promotion
   {
     Promotions.create(req.body)
       .then((promos)=>
@@ -28,12 +33,15 @@ promotionRouter.route('/')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .put(authenticate.verifyUser, (req,res,next) => //unsupported
+  .put(cors.corsWithOptions,authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('Operation not supported');
   })
-  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
+  .delete(cors.corsWithOptions,
+    authenticate.verifyUser,
+    authenticate.verifyAdmin,
+    (req,res,next) => //danger!!
   {
     Promotions.remove({})
       .then((deleted)=>
@@ -47,7 +55,8 @@ promotionRouter.route('/')
 
 
 promotionRouter.route('/:promoId')
-  .get((req,res,next)=> //get promotion
+  .options(cors.corsWithOptions,(req,res)=>{res.sendStatus(200);})
+  .get(cors.cors,(req,res,next)=> //get promotion
   {
     Promotions.findById(req.params.promoId)
       .then((promos)=>
@@ -57,12 +66,15 @@ promotionRouter.route('/:promoId')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .post(authenticate.verifyUser, (req,res,next) => //unsupported
+  .post(cors.corsWithOptions,authenticate.verifyUser, (req,res,next) => //unsupported
   {
     res.statusCode=403;
     res.end('POST not supported');
   })
-  .put( authenticate.verifyUser,(req,res,next) => //update a promotion
+  .put(cors.corsWithOptions,
+     authenticate.verifyUser,
+     authenticate.verifyAdmin,
+     (req,res,next) => //update a promotion
   {
     Promotions.findByIdAndUpdate(req.params.promoId,
         {$set:req.body},
@@ -75,7 +87,10 @@ promotionRouter.route('/:promoId')
         res.json(promos);
       },(err)=>next(err)).catch((err)=>next(err));
   })
-  .delete(authenticate.verifyUser, (req,res,next) => //danger!!
+  .delete(cors.corsWithOptions,
+    authenticate.verifyUser,
+    authenticate.verifyAdmin,
+    (req,res,next) => //danger!!
   {
     Promotions.findByIdAndRemove(req.params.promoId)
       .then((promo)=>
