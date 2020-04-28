@@ -93,4 +93,17 @@ router.get('/logout',(req, res)=>
     next(err);
   }
 });
+
+router.get('/facebook/token',passport.authenticate('facebook-token'),
+  (req,res)=>
+  {
+    if(req.user)
+    {
+      var token = authenticate.getToken({_id: req.user._id});
+      res.statusCode = 200;
+      res.setHeader('Content-Type','application/json');
+      res.json({sucess: true, token: token, status: 'Login Succesfull.'});
+    }
+  }
+);
 module.exports = router;
